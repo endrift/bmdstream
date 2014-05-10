@@ -84,10 +84,11 @@ ars = AudioResampler()
 aenc = LameBin()
 venc = X264Bin()
 
-mkvmux = Gst.ElementFactory.make ('matroskamux', None)
+flvmux = Gst.ElementFactory.make ('flvmux', None)
+flvmux.set_property('streamable', True)
 
 filesink = Gst.ElementFactory.make('filesink', None)
-filesink.set_property('location', 'test.mkv')
+filesink.set_property('location', 'test.flv')
 
 pipeline.add(src)
 pipeline.add(aqueue)
@@ -95,7 +96,7 @@ pipeline.add(vqueue)
 pipeline.add(ars)
 pipeline.add(aenc)
 pipeline.add(venc)
-pipeline.add(mkvmux)
+pipeline.add(flvmux)
 pipeline.add(filesink)
 
 src.link(aqueue)
@@ -103,12 +104,12 @@ src.link(vqueue)
 
 aqueue.link(ars)
 ars.link(aenc)
-aenc.link(mkvmux)
+aenc.link(flvmux)
 
 vqueue.link(venc)
-venc.link(mkvmux)
+venc.link(flvmux)
 
-mkvmux.link(filesink)
+flvmux.link(filesink)
 
 pipeline.set_state(Gst.State.PLAYING)
 loop = GObject.MainLoop()

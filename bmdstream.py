@@ -29,26 +29,26 @@ class AudioResampler(Gst.Bin):
 
 pipeline = Gst.Pipeline()
 
-src = Gst.ElementFactory.make("decklinksrc", None)
-src.set_property("connection", 1)
-src.set_property("mode", 18)
+src = Gst.ElementFactory.make('decklinksrc', None)
+src.set_property('connection', 1)
+src.set_property('mode', 18)
 pipeline.add(src)
 
-aqueue = Gst.ElementFactory.make("queue", None)
+aqueue = Gst.ElementFactory.make('queue', None)
 pipeline.add(aqueue)
 
-vqueue = Gst.ElementFactory.make("queue", None)
+vqueue = Gst.ElementFactory.make('queue', None)
 pipeline.add(vqueue)
 
 ars = AudioResampler()
 pipeline.add(ars)
 
-asink = Gst.ElementFactory.make("autoaudiosink", None)
-asink.set_property("sync", False)
+asink = Gst.ElementFactory.make('autoaudiosink', None)
+asink.set_property('sync', False)
 pipeline.add(asink)
 
-vsink = Gst.ElementFactory.make("autovideosink", None)
-vsink.set_property("sync", False)
+vsink = Gst.ElementFactory.make('autovideosink', None)
+vsink.set_property('sync', False)
 pipeline.add(vsink)
 
 src.link(aqueue)

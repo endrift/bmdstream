@@ -8,6 +8,25 @@ from gi.repository import Gst, GObject
 GObject.threads_init()
 Gst.init(None)
 
+class AudioResampler(Gst.Bin):
+	def __init__(self):
+		super(AudioResampler, self).__init__()
+		convert = Gst.ElementFactory.make('audioconvert', None)
+		resample = Gst.ElementFactory.make('audioresample', None)
+		capsfilter = Gst.ElementFactory.make('capsfilter', None)
+
+		capsfilter.set_property('caps', Gst.caps_from_string('audio/x-raw, rate=44100'))
+
+		self.add(convert)
+		self.add(resample)
+		self.add(capsfilter)
+
+		convert.link(resample)
+		resample.link(capsfilter)
+
+		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('src', capsfilter.get_static_pad('src')))
+
 pipeline = Gst.Pipeline()
 
 src = Gst.ElementFactory.make("decklinksrc", None)
@@ -21,6 +40,9 @@ pipeline.add(aqueue)
 vqueue = Gst.ElementFactory.make("queue", None)
 pipeline.add(vqueue)
 
+ars = AudioResampler()
+pipeline.add(ars)
+
 asink = Gst.ElementFactory.make("autoaudiosink", None)
 asink.set_property("sync", False)
 pipeline.add(asink)
@@ -32,7 +54,8 @@ pipeline.add(vsink)
 src.link(aqueue)
 src.link(vqueue)
 
-aqueue.link(asink)
+aqueue.link(ars)
+ars.link(asink)
 vqueue.link(vsink)
 
 pipeline.set_state(Gst.State.PLAYING)

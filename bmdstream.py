@@ -45,18 +45,27 @@ pipeline.add(ars)
 
 asink = Gst.ElementFactory.make('autoaudiosink', None)
 asink.set_property('sync', False)
-pipeline.add(asink)
+#pipeline.add(asink)
 
 vsink = Gst.ElementFactory.make('autovideosink', None)
 vsink.set_property('sync', False)
-pipeline.add(vsink)
+#pipeline.add(vsink)
 
 src.link(aqueue)
 src.link(vqueue)
 
+mkvmux = Gst.ElementFactory.make ('matroskamux', None)
+pipeline.add(mkvmux)
+
 aqueue.link(ars)
-ars.link(asink)
-vqueue.link(vsink)
+ars.link(mkvmux)
+vqueue.link(mkvmux)
+
+filesink = Gst.ElementFactory.make('filesink', None)
+filesink.set_property('location', 'test.mkv')
+pipeline.add(filesink)
+
+mkvmux.link(filesink)
 
 pipeline.set_state(Gst.State.PLAYING)
 loop = GObject.MainLoop()

@@ -27,6 +27,50 @@ class AudioResampler(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', capsfilter.get_static_pad('src')))
 
+class LameBin(Gst.Bin):
+	def __init__(self):
+		super(LameBin, self).__init__()
+		enc = Gst.ElementFactory.make('lamemp3enc', None)
+		parse = Gst.ElementFactory.make('mpegaudioparse', None)
+		queue = Gst.ElementFactory.make('queue', None)
+
+		enc.set_property('target', 'bitrate')
+
+		self.add(enc)
+		self.add(parse)
+		self.add(queue)
+
+		enc.link(parse)
+		parse.link(queue)
+
+		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
+
+class X264Bin(Gst.Bin):
+	def __init__(self):
+		super(X264Bin, self).__init__()
+		convert = Gst.ElementFactory.make('videoconvert', None)
+		enc = Gst.ElementFactory.make('x264enc', None)
+		parse = Gst.ElementFactory.make('h264parse', None)
+		queue = Gst.ElementFactory.make('queue', None)
+
+		enc.set_property('threads', 4)
+		enc.set_property('speed-preset', 'faster')
+		enc.set_property('tune', 'zerolatency')
+		enc.set_property('bitrate', 3000)
+
+		self.add(convert)
+		self.add(enc)
+		self.add(parse)
+		self.add(queue)
+
+		convert.link(enc)
+		enc.link(parse)
+		parse.link(queue)
+
+		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
+
 pipeline = Gst.Pipeline()
 
 src = Gst.ElementFactory.make('decklinksrc', None)
@@ -37,12 +81,8 @@ aqueue = Gst.ElementFactory.make('queue', None)
 vqueue = Gst.ElementFactory.make('queue', None)
 
 ars = AudioResampler()
-
-asink = Gst.ElementFactory.make('autoaudiosink', None)
-asink.set_property('sync', False)
-
-vsink = Gst.ElementFactory.make('autovideosink', None)
-vsink.set_property('sync', False)
+aenc = LameBin()
+venc = X264Bin()
 
 mkvmux = Gst.ElementFactory.make ('matroskamux', None)
 
@@ -53,8 +93,8 @@ pipeline.add(src)
 pipeline.add(aqueue)
 pipeline.add(vqueue)
 pipeline.add(ars)
-#pipeline.add(asink)
-#pipeline.add(vsink)
+pipeline.add(aenc)
+pipeline.add(venc)
 pipeline.add(mkvmux)
 pipeline.add(filesink)
 
@@ -62,8 +102,11 @@ src.link(aqueue)
 src.link(vqueue)
 
 aqueue.link(ars)
-ars.link(mkvmux)
-vqueue.link(mkvmux)
+ars.link(aenc)
+aenc.link(mkvmux)
+
+vqueue.link(venc)
+venc.link(mkvmux)
 
 mkvmux.link(filesink)
 

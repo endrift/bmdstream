@@ -32,38 +32,38 @@ pipeline = Gst.Pipeline()
 src = Gst.ElementFactory.make('decklinksrc', None)
 src.set_property('connection', 1)
 src.set_property('mode', 18)
-pipeline.add(src)
 
 aqueue = Gst.ElementFactory.make('queue', None)
-pipeline.add(aqueue)
-
 vqueue = Gst.ElementFactory.make('queue', None)
-pipeline.add(vqueue)
 
 ars = AudioResampler()
-pipeline.add(ars)
 
 asink = Gst.ElementFactory.make('autoaudiosink', None)
 asink.set_property('sync', False)
-#pipeline.add(asink)
 
 vsink = Gst.ElementFactory.make('autovideosink', None)
 vsink.set_property('sync', False)
+
+mkvmux = Gst.ElementFactory.make ('matroskamux', None)
+
+filesink = Gst.ElementFactory.make('filesink', None)
+filesink.set_property('location', 'test.mkv')
+
+pipeline.add(src)
+pipeline.add(aqueue)
+pipeline.add(vqueue)
+pipeline.add(ars)
+#pipeline.add(asink)
 #pipeline.add(vsink)
+pipeline.add(mkvmux)
+pipeline.add(filesink)
 
 src.link(aqueue)
 src.link(vqueue)
 
-mkvmux = Gst.ElementFactory.make ('matroskamux', None)
-pipeline.add(mkvmux)
-
 aqueue.link(ars)
 ars.link(mkvmux)
 vqueue.link(mkvmux)
-
-filesink = Gst.ElementFactory.make('filesink', None)
-filesink.set_property('location', 'test.mkv')
-pipeline.add(filesink)
 
 mkvmux.link(filesink)
 

@@ -12,11 +12,11 @@ AUDIO_BOTH="tee name=audio ! $AUDIO_ENC audio. ! $AUDIO_DISP"
 AUDIO_OUT=$AUDIO_BOTH
 AUDIO="src. ! queue ! audioconvert ! interaudiosink interaudiosrc ! audioresample ! audio/x-raw, rate=44100 ! $AUDIO_OUT"
 
-VIDEO_ENC="x264enc threads=4 speed-preset=faster tune=zerolatency bitrate=3072 ! h264parse ! queue ! mux."
-VIDEO_DISP="queue ! autovideosink sync=false"
+VIDEO_ENC="videoconvert ! x264enc threads=4 speed-preset=faster tune=zerolatency bitrate=3072 ! h264parse ! queue ! mux."
+VIDEO_DISP="videoconvert ! autovideosink sync=false"
 VIDEO_BOTH="tee name=video ! $VIDEO_ENC video. ! $VIDEO_DISP"
 VIDEO_OUT=$VIDEO_BOTH
-VIDEO="src. ! queue ! videoconvert ! $VIDEO_OUT"
+VIDEO="src. ! queue ! $VIDEO_OUT"
 
 MUX="flvmux streamable=true name=mux ! filesink location=test.flv"
 

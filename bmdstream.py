@@ -115,6 +115,8 @@ class DeckLinkPipeline(Gst.Pipeline):
 		intersrc = Gst.ElementFactory.make('interaudiosrc')
 		intersrc.set_property('channel', 'ach')
 
+		self.adder = Gst.ElementFactory.make('adder')
+
 		aconv = Gst.ElementFactory.make('audioconvert')
 		ars = AudioResampler()
 
@@ -125,6 +127,7 @@ class DeckLinkPipeline(Gst.Pipeline):
 		self.add(self.vtee)
 		self.add(intersink)
 		self.add(intersrc)
+		self.add(self.adder)
 		self.add(aconv)
 		self.add(ars)
 
@@ -134,9 +137,25 @@ class DeckLinkPipeline(Gst.Pipeline):
 		aqueue.link(aconv)
 		aconv.link(intersink)
 		intersrc.link(ars)
-		ars.link(self.atee)
+		ars.link(self.adder)
+
+		self.adder.link(self.atee)
 
 		vqueue.link(self.vtee)
+
+	def attach_mic(self):
+		mic = Gst.ElementFactory.make('autoaudiosrc')
+		mqueue = Gst.ElementFactory.make('queue')
+		mrs = AudioResampler()
+
+		self.add(mic)
+		self.add(mqueue)
+		self.add(mrs)
+
+		mic.link(mqueue)
+		mqueue.link(mrs)
+		mrs.link(self.adder)
+
 
 	def attach_flv_muxer(self):
 		aenc = LameBin()
@@ -172,6 +191,7 @@ class DeckLinkPipeline(Gst.Pipeline):
 		self.vtee.link(vout)
 
 pipeline = DeckLinkPipeline()
+pipeline.attach_mic()
 pipeline.attach_flv_muxer()
 pipeline.attach_display()
 

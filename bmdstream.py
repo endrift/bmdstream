@@ -98,6 +98,22 @@ class VideoDisplay(Gst.Bin):
 
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 
+class AudioInput(Gst.Bin):
+	def __init__(self):
+		super(AudioInput, self).__init__()
+		mic = Gst.ElementFactory.make('autoaudiosrc')
+		mqueue = Gst.ElementFactory.make('queue')
+		mrs = AudioResampler()
+
+		self.add(mic)
+		self.add(mqueue)
+		self.add(mrs)
+
+		mic.link(mqueue)
+		mqueue.link(mrs)
+
+		self.add_pad(Gst.GhostPad.new('src', mrs.get_static_pad('src')))
+
 class FLVMuxer(Gst.Bin):
 	def __init__(self):
 		super(FLVMuxer, self).__init__()
@@ -180,19 +196,9 @@ class DeckLinkPipeline(Gst.Pipeline):
 
 		vqueue.link(self.vtee)
 
-	def attach_mic(self):
-		mic = Gst.ElementFactory.make('autoaudiosrc')
-		mqueue = Gst.ElementFactory.make('queue')
-		mrs = AudioResampler()
-
-		self.add(mic)
-		self.add(mqueue)
-		self.add(mrs)
-
-		mic.link(mqueue)
-		mqueue.link(mrs)
-		mrs.link(self.adder)
-
+	def attach_audio_input(self, input):
+		self.add(input)
+		input.link(self.adder)
 
 	def attach_output(self, output):
 		self.add(output)
@@ -200,7 +206,7 @@ class DeckLinkPipeline(Gst.Pipeline):
 		self.vtee.link(output)
 
 pipeline = DeckLinkPipeline()
-pipeline.attach_mic()
+pipeline.attach_audio_input(AudioInput())
 pipeline.attach_output(FLVMuxer())
 pipeline.attach_output(Display())
 

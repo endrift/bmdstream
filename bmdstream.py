@@ -98,6 +98,43 @@ class VideoDisplay(Gst.Bin):
 
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 
+class FLVMuxer(Gst.Bin):
+	def __init__(self):
+		super(FLVMuxer, self).__init__()
+		aenc = LameBin()
+		venc = X264Bin()
+
+		flvmux = Gst.ElementFactory.make ('flvmux', None)
+		flvmux.set_property('streamable', True)
+
+		filesink = Gst.ElementFactory.make('filesink', None)
+		filesink.set_property('location', 'test.flv')
+
+		self.add(aenc)
+		self.add(venc)
+		self.add(flvmux)
+		self.add(filesink)
+
+		venc.link(flvmux)
+		aenc.link(flvmux)
+
+		flvmux.link(filesink)
+
+		self.add_pad(Gst.GhostPad.new('audio', aenc.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('video', venc.get_static_pad('sink')))
+
+class Display(Gst.Bin):
+	def __init__(self):
+		super(Display, self).__init__()
+		aout = AudioDisplay()
+		vout = VideoDisplay()
+
+		self.add(aout)
+		self.add(vout)
+
+		self.add_pad(Gst.GhostPad.new('audio', aout.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('video', vout.get_static_pad('sink')))
+
 class DeckLinkPipeline(Gst.Pipeline):
 	def __init__(self):
 		super(DeckLinkPipeline, self).__init__()
@@ -157,43 +194,15 @@ class DeckLinkPipeline(Gst.Pipeline):
 		mrs.link(self.adder)
 
 
-	def attach_flv_muxer(self):
-		aenc = LameBin()
-		venc = X264Bin()
-
-		flvmux = Gst.ElementFactory.make ('flvmux', None)
-		flvmux.set_property('streamable', True)
-
-		filesink = Gst.ElementFactory.make('filesink', None)
-		filesink.set_property('location', 'test.flv')
-
-		self.add(aenc)
-		self.add(venc)
-		self.add(flvmux)
-		self.add(filesink)
-
-		self.atee.link(aenc)
-		aenc.link(flvmux)
-
-		self.vtee.link(venc)
-		venc.link(flvmux)
-
-		flvmux.link(filesink)
-
-	def attach_display(self):
-		aout = AudioDisplay()
-		vout = VideoDisplay()
-
-		self.add(aout)
-		self.add(vout)
-
-		self.atee.link(aout)
-		self.vtee.link(vout)
+	def attach_output(self, output):
+		self.add(output)
+		self.atee.link(output)
+		self.vtee.link(output)
 
 pipeline = DeckLinkPipeline()
 pipeline.attach_mic()
-pipeline.attach_flv_muxer()
-pipeline.attach_display()
+pipeline.attach_output(FLVMuxer())
+pipeline.attach_output(Display())
 
 pipeline.set_state(Gst.State.PLAYING)
 loop = GObject.MainLoop()

@@ -24,9 +24,9 @@ class AudioResampler(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', resample.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', capsfilter.get_static_pad('src')))
 
-class LameBin(Gst.Bin):
+class LameEncoder(Gst.Bin):
 	def __init__(self):
-		super(LameBin, self).__init__()
+		super(LameEncoder, self).__init__()
 		enc = Gst.ElementFactory.make('lamemp3enc', None)
 		parse = Gst.ElementFactory.make('mpegaudioparse', None)
 		queue = Gst.ElementFactory.make('queue', None)
@@ -43,9 +43,9 @@ class LameBin(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
-class X264Bin(Gst.Bin):
+class X264Encoder(Gst.Bin):
 	def __init__(self):
-		super(X264Bin, self).__init__()
+		super(X264Encoder, self).__init__()
 		convert = Gst.ElementFactory.make('videoconvert', None)
 		enc = Gst.ElementFactory.make('x264enc', None)
 		parse = Gst.ElementFactory.make('h264parse', None)
@@ -101,8 +101,8 @@ class VideoDisplay(Gst.Bin):
 class FLVMuxer(Gst.Bin):
 	def __init__(self):
 		super(FLVMuxer, self).__init__()
-		aenc = LameBin()
-		venc = X264Bin()
+		aenc = LameEncoder()
+		venc = X264Encoder()
 
 		flvmux = Gst.ElementFactory.make ('flvmux', None)
 		flvmux.set_property('streamable', True)

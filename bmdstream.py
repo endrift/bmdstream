@@ -68,6 +68,36 @@ class X264Bin(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
+class AudioDisplay(Gst.Bin):
+	def __init__(self):
+		super(AudioDisplay, self).__init__()
+		queue = Gst.ElementFactory.make('queue', None)
+		sink = Gst.ElementFactory.make('autoaudiosink', None)
+
+		sink.set_property('sync', False)
+
+		self.add(queue)
+		self.add(sink)
+
+		queue.link(sink)
+
+		self.add_pad(Gst.GhostPad.new('sink', queue.get_static_pad('sink')))
+
+class VideoDisplay(Gst.Bin):
+	def __init__(self):
+		super(VideoDisplay, self).__init__()
+		convert = Gst.ElementFactory.make('videoconvert', None)
+		sink = Gst.ElementFactory.make('autovideosink', None)
+
+		sink.set_property('sync', False)
+
+		self.add(convert)
+		self.add(sink)
+
+		convert.link(sink)
+
+		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
+
 pipeline = Gst.Pipeline()
 
 src = Gst.ElementFactory.make('decklinksrc', None)
@@ -75,7 +105,9 @@ src.set_property('connection', 1)
 src.set_property('mode', 18)
 
 aqueue = Gst.ElementFactory.make('queue', None)
+atee = Gst.ElementFactory.make('tee', None)
 vqueue = Gst.ElementFactory.make('queue', None)
+vtee = Gst.ElementFactory.make('tee', None)
 
 intersink = Gst.ElementFactory.make('interaudiosink')
 intersink.set_property('channel', 'ach')
@@ -95,7 +127,9 @@ filesink.set_property('location', 'test.flv')
 
 pipeline.add(src)
 pipeline.add(aqueue)
+pipeline.add(atee)
 pipeline.add(vqueue)
+pipeline.add(vtee)
 pipeline.add(intersink)
 pipeline.add(intersrc)
 pipeline.add(aconv)
@@ -111,13 +145,26 @@ src.link(vqueue)
 aqueue.link(aconv)
 aconv.link(intersink)
 intersrc.link(ars)
-ars.link(aenc)
+ars.link(atee)
+
+atee.link(aenc)
 aenc.link(flvmux)
 
-vqueue.link(venc)
+vqueue.link(vtee)
+
+vtee.link(venc)
 venc.link(flvmux)
 
 flvmux.link(filesink)
+
+aout = AudioDisplay()
+vout = VideoDisplay()
+
+pipeline.add(aout)
+pipeline.add(vout)
+
+atee.link(aout)
+vtee.link(vout)
 
 pipeline.set_state(Gst.State.PLAYING)
 loop = GObject.MainLoop()

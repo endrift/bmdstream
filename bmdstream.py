@@ -106,9 +106,9 @@ class DeckLinkPipeline(Gst.Pipeline):
 		src.set_property('mode', 18)
 
 		aqueue = Gst.ElementFactory.make('queue', None)
-		atee = Gst.ElementFactory.make('tee', None)
+		self.atee = Gst.ElementFactory.make('tee', None)
 		vqueue = Gst.ElementFactory.make('queue', None)
-		vtee = Gst.ElementFactory.make('tee', None)
+		self.vtee = Gst.ElementFactory.make('tee', None)
 
 		intersink = Gst.ElementFactory.make('interaudiosink')
 		intersink.set_property('channel', 'ach')
@@ -117,6 +117,28 @@ class DeckLinkPipeline(Gst.Pipeline):
 
 		aconv = Gst.ElementFactory.make('audioconvert')
 		ars = AudioResampler()
+
+		self.add(src)
+		self.add(aqueue)
+		self.add(self.atee)
+		self.add(vqueue)
+		self.add(self.vtee)
+		self.add(intersink)
+		self.add(intersrc)
+		self.add(aconv)
+		self.add(ars)
+
+		src.link(aqueue)
+		src.link(vqueue)
+
+		aqueue.link(aconv)
+		aconv.link(intersink)
+		intersrc.link(ars)
+		ars.link(self.atee)
+
+		vqueue.link(self.vtee)
+
+	def attach_flv_muxer(self):
 		aenc = LameBin()
 		venc = X264Bin()
 
@@ -126,48 +148,32 @@ class DeckLinkPipeline(Gst.Pipeline):
 		filesink = Gst.ElementFactory.make('filesink', None)
 		filesink.set_property('location', 'test.flv')
 
-		self.add(src)
-		self.add(aqueue)
-		self.add(atee)
-		self.add(vqueue)
-		self.add(vtee)
-		self.add(intersink)
-		self.add(intersrc)
-		self.add(aconv)
-		self.add(ars)
 		self.add(aenc)
 		self.add(venc)
 		self.add(flvmux)
 		self.add(filesink)
 
-		src.link(aqueue)
-		src.link(vqueue)
-
-		aqueue.link(aconv)
-		aconv.link(intersink)
-		intersrc.link(ars)
-		ars.link(atee)
-
-		atee.link(aenc)
+		self.atee.link(aenc)
 		aenc.link(flvmux)
 
-		vqueue.link(vtee)
-
-		vtee.link(venc)
+		self.vtee.link(venc)
 		venc.link(flvmux)
 
 		flvmux.link(filesink)
 
+	def attach_display(self):
 		aout = AudioDisplay()
 		vout = VideoDisplay()
 
 		self.add(aout)
 		self.add(vout)
 
-		atee.link(aout)
-		vtee.link(vout)
+		self.atee.link(aout)
+		self.vtee.link(vout)
 
 pipeline = DeckLinkPipeline()
+pipeline.attach_flv_muxer()
+pipeline.attach_display()
 
 pipeline.set_state(Gst.State.PLAYING)
 loop = GObject.MainLoop()

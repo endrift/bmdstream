@@ -1,4 +1,3 @@
-#!/usr/bin/python
 import gi
 import os
 import sys
@@ -80,80 +79,6 @@ class AudioResampler(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', resample.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', capsfilter.get_static_pad('src')))
 
-class LameEncoder(Gst.Bin):
-	def __init__(self):
-		super(LameEncoder, self).__init__()
-		enc = Gst.ElementFactory.make('lamemp3enc', None)
-		parse = Gst.ElementFactory.make('mpegaudioparse', None)
-		queue = Gst.ElementFactory.make('queue', None)
-
-		enc.set_property('target', 'bitrate')
-
-		self.add(enc)
-		self.add(parse)
-		self.add(queue)
-
-		enc.link(parse)
-		parse.link(queue)
-
-		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
-		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
-
-class X264Encoder(Gst.Bin):
-	def __init__(self):
-		super(X264Encoder, self).__init__()
-		convert = Gst.ElementFactory.make('videoconvert', None)
-		enc = Gst.ElementFactory.make('x264enc', None)
-		parse = Gst.ElementFactory.make('h264parse', None)
-		queue = Gst.ElementFactory.make('queue', None)
-
-		enc.set_property('threads', 4)
-		enc.set_property('speed-preset', 'faster')
-		enc.set_property('tune', 'zerolatency')
-		enc.set_property('bitrate', 3000)
-
-		self.add(convert)
-		self.add(enc)
-		self.add(parse)
-		self.add(queue)
-
-		convert.link(enc)
-		enc.link(parse)
-		parse.link(queue)
-
-		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
-		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
-
-class AudioDisplay(Gst.Bin):
-	def __init__(self):
-		super(AudioDisplay, self).__init__()
-		queue = Gst.ElementFactory.make('queue', None)
-		sink = Gst.ElementFactory.make('autoaudiosink', None)
-
-		sink.set_property('sync', False)
-
-		self.add(queue)
-		self.add(sink)
-
-		queue.link(sink)
-
-		self.add_pad(Gst.GhostPad.new('sink', queue.get_static_pad('sink')))
-
-class VideoDisplay(Gst.Bin):
-	def __init__(self):
-		super(VideoDisplay, self).__init__()
-		convert = Gst.ElementFactory.make('videoconvert', None)
-		sink = Gst.ElementFactory.make('autovideosink', None)
-
-		sink.set_property('sync', False)
-
-		self.add(convert)
-		self.add(sink)
-
-		convert.link(sink)
-
-		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
-
 class AudioInput(Gst.Bin):
 	def __init__(self):
 		super(AudioInput, self).__init__()
@@ -169,43 +94,6 @@ class AudioInput(Gst.Bin):
 		mqueue.link(mrs)
 
 		self.add_pad(Gst.GhostPad.new('src', mrs.get_static_pad('src')))
-
-class FLVMuxer(Gst.Bin):
-	def __init__(self):
-		super(FLVMuxer, self).__init__()
-		aenc = LameEncoder()
-		venc = X264Encoder()
-
-		flvmux = Gst.ElementFactory.make ('flvmux', None)
-		flvmux.set_property('streamable', True)
-
-		filesink = Gst.ElementFactory.make('filesink', None)
-		filesink.set_property('location', 'test.flv')
-
-		self.add(aenc)
-		self.add(venc)
-		self.add(flvmux)
-		self.add(filesink)
-
-		venc.link(flvmux)
-		aenc.link(flvmux)
-
-		flvmux.link(filesink)
-
-		self.add_pad(Gst.GhostPad.new('audio', aenc.get_static_pad('sink')))
-		self.add_pad(Gst.GhostPad.new('video', venc.get_static_pad('sink')))
-
-class Display(Gst.Bin):
-	def __init__(self):
-		super(Display, self).__init__()
-		aout = AudioDisplay()
-		vout = VideoDisplay()
-
-		self.add(aout)
-		self.add(vout)
-
-		self.add_pad(Gst.GhostPad.new('audio', aout.get_static_pad('sink')))
-		self.add_pad(Gst.GhostPad.new('video', vout.get_static_pad('sink')))
 
 class DeckLinkPipeline(Gst.Pipeline):
 	def __init__(self, connection, mode):
@@ -260,19 +148,3 @@ class DeckLinkPipeline(Gst.Pipeline):
 		self.add(output)
 		self.atee.link(output)
 		self.vtee.link(output)
-
-if __name__ == '__main__':
-	config = Configuration()
-	config.add_config_file()
-
-	pipeline = DeckLinkPipeline(config.getint('connection'), config.getint('mode'))
-	pipeline.attach_audio_input(AudioInput())
-
-	if config.getboolean('save'):
-		pipeline.attach_output(FLVMuxer())
-	if config.getboolean('display'):
-		pipeline.attach_output(Display())
-
-	pipeline.set_state(Gst.State.PLAYING)
-	loop = GObject.MainLoop()
-	loop.run()

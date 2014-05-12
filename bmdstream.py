@@ -1,6 +1,33 @@
-#!/usr/bin/python3
+#!/usr/bin/python
 import gi
+import os
+import sys
 import threading
+
+class Configuration:
+	def __init__(self):
+		if sys.version_info.major >= 3:
+			import configparser
+		else:
+			import ConfigParser as configparser
+
+		self.config = configparser.SafeConfigParser()
+		self.session = None
+
+	def add_config_file(self, config_file=None):
+
+		if config_file is None:
+			config_dir = os.environ.get('XDG_CONFIG_HOME') or (os.path.join(os.environ.get('HOME'), '.config'))
+			config_file = os.path.join(config_dir, 'bmdstream')
+		self.config.read(config_file)
+
+	def __getitem__(self, key):
+		value = None
+		if self.session is not None:
+			value = self.config.get('sessions.' + self.session, key)
+		if value is None:
+			value = self.config.get('defaults', key)
+		return value
 
 gi.require_version('Gst', '1.0')
 from gi.repository import Gst, GObject
@@ -152,11 +179,11 @@ class Display(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('video', vout.get_static_pad('sink')))
 
 class DeckLinkPipeline(Gst.Pipeline):
-	def __init__(self):
+	def __init__(self, connection, mode):
 		super(DeckLinkPipeline, self).__init__()
 		src = Gst.ElementFactory.make('decklinksrc', None)
-		src.set_property('connection', 1)
-		src.set_property('mode', 18)
+		src.set_property('connection', connection)
+		src.set_property('mode', mode)
 
 		aqueue = Gst.ElementFactory.make('queue', None)
 		self.atee = Gst.ElementFactory.make('tee', None)
@@ -205,11 +232,16 @@ class DeckLinkPipeline(Gst.Pipeline):
 		self.atee.link(output)
 		self.vtee.link(output)
 
-pipeline = DeckLinkPipeline()
-pipeline.attach_audio_input(AudioInput())
-pipeline.attach_output(FLVMuxer())
-pipeline.attach_output(Display())
+if __name__ == '__main__':
+	config = Configuration()
+	config.add_config_file()
 
-pipeline.set_state(Gst.State.PLAYING)
-loop = GObject.MainLoop()
-loop.run()
+	pipeline = DeckLinkPipeline(int(config['connection']), int(config['mode']))
+	pipeline.attach_audio_input(AudioInput())
+
+	pipeline.attach_output(FLVMuxer())
+	pipeline.attach_output(Display())
+
+	pipeline.set_state(Gst.State.PLAYING)
+	loop = GObject.MainLoop()
+	loop.run()

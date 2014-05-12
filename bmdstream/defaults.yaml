@@ -27,7 +27,7 @@ containers:
     video: h264
   raw:
     format: mkv
-    audio: raw
+    audio: flac
     video: raw
   mkv:
     format: mkv

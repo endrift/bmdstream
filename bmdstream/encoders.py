@@ -27,6 +27,20 @@ class LameEncoder(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
+class FlacEncoder(Gst.Bin):
+	def __init__(self):
+		super(FlacEncoder, self).__init__()
+		enc = Gst.ElementFactory.make('flacenc', None)
+		queue = Gst.ElementFactory.make('queue', None)
+
+		self.add(enc)
+		self.add(queue)
+
+		enc.link(queue)
+
+		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
+
 class X264Encoder(Gst.Bin):
 	def __init__(self):
 		super(X264Encoder, self).__init__()
@@ -53,5 +67,6 @@ class X264Encoder(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
 encoder_registry['raw'] = None
+encoder_registry['flac'] = FlacEncoder
 encoder_registry['mp3'] = LameEncoder
 encoder_registry['h264'] = X264Encoder

@@ -11,8 +11,10 @@ def make_pipe(config, name):
 	aenc = make_encoder(container_info['audio'])
 	venc = make_encoder(container_info['video'])
 	pipe = Pipe()
-	pipe.set_audio_encoder(aenc)
-	pipe.set_video_encoder(venc)
+	if aenc:
+		pipe.set_audio_encoder(aenc)
+	if venc:
+		pipe.set_video_encoder(venc)
 	pipe.set_muxer(muxer)
 	pipe.finalize()
 	return pipe
@@ -40,15 +42,13 @@ class Pipe(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('src', muxer.get_static_pad('src')))
 
 	def finalize(self):
-		if self.aenc:
-			self.aenc.link(self.muxer)
-		else:
-			self.add_pad(Gst.GhostPad.new('audio', muxer.get_static_pad('audio')))
+		if not self.aenc:
+			self.set_audio_encoder(Gst.ElementFactory.make('queue', None))
+		self.aenc.link(self.muxer)
 
-		if self.venc:
-			self.venc.link(self.muxer)
-		else:
-			self.add_pad(Gst.GhostPad.new('video', muxer.get_static_pad('video')))
+		if not self.venc:
+			self.set_video_encoder(Gst.ElementFactory.make('queue', None))
+		self.venc.link(self.muxer)
 
 def flv_make():
 	flvmux = Gst.ElementFactory.make('flvmux', None)
@@ -56,7 +56,7 @@ def flv_make():
 	return flvmux
 
 def mkv_make():
-	return Gst.ElementFactory.make('mkvmux', None)
+	return Gst.ElementFactory.make('matroskamux', None)
 
 container_registry['flv'] = flv_make
 container_registry['mkv'] = mkv_make

@@ -268,8 +268,10 @@ if __name__ == '__main__':
 	pipeline = DeckLinkPipeline(config.getint('connection'), config.getint('mode'))
 	pipeline.attach_audio_input(AudioInput())
 
-	pipeline.attach_output(FLVMuxer())
-	pipeline.attach_output(Display())
+	if config.getboolean('save'):
+		pipeline.attach_output(FLVMuxer())
+	if config.getboolean('display'):
+		pipeline.attach_output(Display())
 
 	pipeline.set_state(Gst.State.PLAYING)
 	loop = GObject.MainLoop()

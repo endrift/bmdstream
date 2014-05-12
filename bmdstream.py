@@ -10,6 +10,7 @@ class Configuration:
 			import configparser
 		else:
 			import ConfigParser as configparser
+		self._ns = configparser
 
 		self.config = configparser.SafeConfigParser()
 		self.session = None
@@ -21,12 +22,40 @@ class Configuration:
 			config_file = os.path.join(config_dir, 'bmdstream')
 		self.config.read(config_file)
 
-	def __getitem__(self, key):
+	def getint(self, key, default=0):
 		value = None
 		if self.session is not None:
-			value = self.config.get('sessions.' + self.session, key)
+			try:
+				value = self.config.getint('sessions.' + self.session, key)
+			except self._ns.NoOptionError:
+				pass
 		if value is None:
-			value = self.config.get('defaults', key)
+			try:
+				value = self.config.getint('defaults', key)
+			except self._ns.NoOptionError:
+				pass
+		if value is None:
+			if default is not None:
+				return default
+			raise KeyError(key)
+		return value
+
+	def getboolean(self, key, default=False):
+		value = None
+		if self.session is not None:
+			try:
+				value = self.config.getboolean('sessions.' + self.session, key)
+			except self._ns.NoOptionError:
+				pass
+		if value is None:
+			try:
+				value = self.config.getboolean('defaults', key)
+			except self._ns.NoOptionError:
+				pass
+		if value is None:
+			if default is not None:
+				return default
+			raise KeyError(key)
 		return value
 
 gi.require_version('Gst', '1.0')
@@ -236,7 +265,7 @@ if __name__ == '__main__':
 	config = Configuration()
 	config.add_config_file()
 
-	pipeline = DeckLinkPipeline(int(config['connection']), int(config['mode']))
+	pipeline = DeckLinkPipeline(config.getint('connection'), config.getint('mode'))
 	pipeline.attach_audio_input(AudioInput())
 
 	pipeline.attach_output(FLVMuxer())

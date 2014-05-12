@@ -1,8 +1,9 @@
-from gi.repository import Gst, GObject
+#!/usr/bin/env python
+from bmdstream import AudioInput, Configuration, DeckLinkPipeline
+from bmdstream.displays import Display
+from bmdstream.muxers import FLVMuxer
 
-from . import AudioInput, Configuration, DeckLinkPipeline
-from .displays import Display
-from .muxers import FLVMuxer
+from gi.repository import Gst, GObject
 
 if __name__ == '__main__':
 	config = Configuration()

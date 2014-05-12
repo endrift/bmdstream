@@ -2,66 +2,38 @@ import gi
 import os
 import sys
 import threading
+import yaml
 
 class Configuration:
 	def __init__(self):
-		if sys.version_info.major >= 3:
-			import configparser
-		else:
-			import ConfigParser as configparser
-		self._ns = configparser
+		self.config = {
+			'pipeline': {},
+			'inputs': {},
+			'containers': {},
+			'formats': {},
+			'outputs': {}
+		}
 
-		self.config = configparser.SafeConfigParser()
-		self.session = None
+		self.add_config_file(os.path.join(os.path.dirname(__file__), 'defaults.yaml'))
 
 	def add_config_file(self, config_file=None):
-
 		if config_file is None:
 			config_dir = os.environ.get('XDG_CONFIG_HOME') or (os.path.join(os.environ.get('HOME'), '.config'))
 			config_file = os.path.join(config_dir, 'bmdstream')
-		self.config.read(config_file)
+		with open(config_file, 'r') as f:
+			new_config = yaml.load(f)
+			for section, value in new_config.items():
+				if section in self.config:
+					self.config[section].update(value)
 
-	def getint(self, key, default=0):
-		value = None
-		if self.session is not None:
-			try:
-				value = self.config.getint('sessions.' + self.session, key)
-			except self._ns.NoOptionError:
-				pass
-		if value is None:
-			try:
-				value = self.config.getint('defaults', key)
-			except self._ns.NoOptionError:
-				pass
-		if value is None:
-			if default is not None:
-				return default
-			raise KeyError(key)
-		return value
+	def __getitem__(self, key):
+		return self.config[key]
 
-	def getboolean(self, key, default=False):
-		value = None
-		if self.session is not None:
-			try:
-				value = self.config.getboolean('sessions.' + self.session, key)
-			except self._ns.NoOptionError:
-				pass
-		if value is None:
-			try:
-				value = self.config.getboolean('defaults', key)
-			except self._ns.NoOptionError:
-				pass
-		if value is None:
-			if default is not None:
-				return default
-			raise KeyError(key)
-		return value
+	def get(self, key, default=None):
+		return self.config.get(key, default)
 
 gi.require_version('Gst', '1.0')
-from gi.repository import Gst, GObject
-
-GObject.threads_init()
-Gst.init(None)
+from gi.repository import Gst
 
 class AudioResampler(Gst.Bin):
 	def __init__(self):
@@ -140,11 +112,26 @@ class DeckLinkPipeline(Gst.Pipeline):
 
 		vqueue.link(self.vtee)
 
+		self.pipes = {}
+
+	@staticmethod
+	def create_from_configuration(config, preset):
+		return DeckLinkPipeline(config['inputs'][preset]['connection'], config['inputs'][preset]['mode'])
+
 	def attach_audio_input(self, input):
 		self.add(input)
 		input.link(self.adder)
 
-	def attach_output(self, output):
+	def attach_pipe(self, name, pipe):
+		self.add(pipe)
+		self.atee.link(pipe)
+		self.vtee.link(pipe)
+		self.pipes[name] = pipe
+
+	def attach_output(self, pipe, output):
 		self.add(output)
-		self.atee.link(output)
-		self.vtee.link(output)
+		if pipe is not None:
+			self.pipes[pipe].link(output)
+		else:
+			self.atee.link(output)
+			self.vtee.link(output)

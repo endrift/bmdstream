@@ -1,0 +1,68 @@
+# Default run settings
+pipeline:
+  input: hdmi-720p60
+  pipes:
+    - name: flv
+      format: flv-hi
+  outputs:
+    - type: file
+      location: out.flv
+      pipe: flv
+    - type: display
+
+# Card input formats
+inputs:
+  hdmi-720p60:
+    connection: 1
+    mode: 18
+  hdmi-720p:
+    connection: 1
+    mode: 17
+
+# Audio/video stream containers
+containers:
+  flv:
+    format: flv
+    audio: mp3
+    video: h264
+  raw:
+    format: mkv
+    audio: raw
+    video: raw
+  mkv:
+    format: mkv
+    audio: aac
+    video: h264
+
+# Qualities and associated containers
+formats:
+  flv-hi:
+    container: flv
+    height: 0
+    width: 0
+    vbr: 2500
+    abr: 192
+    samplerate: 44100
+  flv-medium:
+    container: flv
+    height: 720
+    width: 1280
+    vbr: 1500
+    abr: 128
+    samplerate: 44100
+  flv-lo:
+    container: flv
+    height: 480
+    width: 720
+    vbr: 900
+    abr: 96
+    samplerate: 22050
+  raw:
+    container: raw
+
+# Output destinations
+outputs:
+   file:
+     type: file
+   display:
+     type: display

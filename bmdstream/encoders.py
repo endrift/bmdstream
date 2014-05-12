@@ -1,5 +1,13 @@
 from gi.repository import Gst
 
+encoder_registry = {}
+
+def make_encoder(name):
+	enc = encoder_registry[name]
+	if enc:
+		return enc()
+	return None
+
 class LameEncoder(Gst.Bin):
 	def __init__(self):
 		super(LameEncoder, self).__init__()
@@ -44,3 +52,6 @@ class X264Encoder(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
+encoder_registry['raw'] = None
+encoder_registry['mp3'] = LameEncoder
+encoder_registry['h264'] = X264Encoder

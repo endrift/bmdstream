@@ -1,5 +1,15 @@
 from gi.repository import Gst
 
+output_registry = {}
+
+def make_output(config, output):
+	output_type = output_registry[output['type']]()
+	for name, prop in output.items():
+		if name in ['type', 'pipe']:
+			continue
+		output_type.set_property(name, prop)
+	return output_type
+
 class AudioDisplay(Gst.Bin):
 	def __init__(self):
 		super(AudioDisplay, self).__init__()
@@ -41,3 +51,9 @@ class Display(Gst.Bin):
 
 		self.add_pad(Gst.GhostPad.new('audio', aout.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('video', vout.get_static_pad('sink')))
+
+def filesink_make():
+	return Gst.ElementFactory.make('filesink')
+
+output_registry['display'] = Display
+output_registry['file'] = filesink_make

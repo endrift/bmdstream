@@ -1,21 +1,28 @@
 #!/usr/bin/env python
-from bmdstream import AudioInput, Configuration, DeckLinkPipeline
-from bmdstream.displays import Display
-from bmdstream.muxers import FLVMuxer
-
 from gi.repository import Gst, GObject
+
+GObject.threads_init()
+Gst.init(None)
+
+from bmdstream import AudioInput, Configuration, DeckLinkPipeline
+from bmdstream.outputs import make_output
+from bmdstream.containers import make_pipe
 
 if __name__ == '__main__':
 	config = Configuration()
-	config.add_config_file()
+	try:
+		config.add_config_file()
+	except IOError:
+		pass
 
-	pipeline = DeckLinkPipeline(config.getint('connection'), config.getint('mode'))
+	pipeline = DeckLinkPipeline.create_from_configuration(config, config['pipeline']['input'])
 	pipeline.attach_audio_input(AudioInput())
 
-	if config.getboolean('save'):
-		pipeline.attach_output(FLVMuxer())
-	if config.getboolean('display'):
-		pipeline.attach_output(Display())
+	for pipe in config['pipeline']['pipes']:
+		pipeline.attach_pipe(pipe['name'], make_pipe(config, pipe['format']))
+
+	for output in config['pipeline']['outputs']:
+		pipeline.attach_output(output.get('pipe'), make_output(config, output))
 
 	pipeline.set_state(Gst.State.PLAYING)
 	loop = GObject.MainLoop()

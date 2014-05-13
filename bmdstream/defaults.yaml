@@ -55,7 +55,7 @@ formats:
     height: 480
     width: 720
     vbr: 900
-    abr: 96
+    abr: 112
     samplerate: 22050
   raw:
     container: raw

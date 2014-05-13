@@ -24,6 +24,8 @@ class LameEncoder(Gst.Bin):
 		enc.link(parse)
 		parse.link(queue)
 
+		self.set_property = enc.set_property
+
 		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
@@ -37,6 +39,8 @@ class FlacEncoder(Gst.Bin):
 		self.add(queue)
 
 		enc.link(queue)
+
+		self.set_property = enc.set_property
 
 		self.add_pad(Gst.GhostPad.new('sink', enc.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
@@ -52,7 +56,6 @@ class X264Encoder(Gst.Bin):
 		enc.set_property('threads', 4)
 		enc.set_property('speed-preset', 'faster')
 		enc.set_property('tune', 'zerolatency')
-		enc.set_property('bitrate', 3000)
 
 		self.add(convert)
 		self.add(enc)
@@ -62,6 +65,8 @@ class X264Encoder(Gst.Bin):
 		convert.link(enc)
 		enc.link(parse)
 		parse.link(queue)
+
+		self.set_property = enc.set_property
 
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))

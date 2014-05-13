@@ -10,6 +10,12 @@ def make_pipe(config, name):
 	muxer = container_registry[container_info['format']]()
 	aenc = make_encoder(container_info['audio'])
 	venc = make_encoder(container_info['video'])
+
+	if 'abr' in format_info:
+		aenc.set_property('bitrate', format_info['abr'])
+	if 'vbr' in format_info:
+		venc.set_property('bitrate', format_info['vbr'])
+
 	pipe = Pipe()
 	if aenc:
 		pipe.set_audio_encoder(aenc)

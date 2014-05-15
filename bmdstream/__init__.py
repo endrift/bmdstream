@@ -55,7 +55,7 @@ class AudioInput(Gst.Bin):
 	def __init__(self):
 		super(AudioInput, self).__init__()
 		mic = Gst.ElementFactory.make('autoaudiosrc')
-		mqueue = Gst.ElementFactory.make('queue')
+		mqueue = Gst.ElementFactory.make('queue', 'iaqueue')
 		mrs = AudioResampler()
 
 		self.add(mic)
@@ -74,9 +74,9 @@ class DeckLinkPipeline(Gst.Pipeline):
 		src.set_property('connection', connection)
 		src.set_property('mode', mode)
 
-		aqueue = Gst.ElementFactory.make('queue', None)
+		aqueue = Gst.ElementFactory.make('queue', 'aqueue')
 		self.atee = Gst.ElementFactory.make('tee', None)
-		vqueue = Gst.ElementFactory.make('queue', None)
+		vqueue = Gst.ElementFactory.make('queue', 'vqueue')
 		self.vtee = Gst.ElementFactory.make('tee', None)
 
 		intersink = Gst.ElementFactory.make('interaudiosink')

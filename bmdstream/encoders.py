@@ -13,7 +13,7 @@ class LameEncoder(Gst.Bin):
 		super(LameEncoder, self).__init__()
 		enc = Gst.ElementFactory.make('lamemp3enc', None)
 		parse = Gst.ElementFactory.make('mpegaudioparse', None)
-		queue = Gst.ElementFactory.make('queue', None)
+		queue = Gst.ElementFactory.make('queue', 'lamequeue')
 
 		enc.set_property('target', 'bitrate')
 
@@ -33,7 +33,7 @@ class FlacEncoder(Gst.Bin):
 	def __init__(self):
 		super(FlacEncoder, self).__init__()
 		enc = Gst.ElementFactory.make('flacenc', None)
-		queue = Gst.ElementFactory.make('queue', None)
+		queue = Gst.ElementFactory.make('queue', 'flacqueue')
 
 		self.add(enc)
 		self.add(queue)
@@ -51,7 +51,7 @@ class X264Encoder(Gst.Bin):
 		convert = Gst.ElementFactory.make('videoconvert', None)
 		enc = Gst.ElementFactory.make('x264enc', None)
 		parse = Gst.ElementFactory.make('h264parse', None)
-		queue = Gst.ElementFactory.make('queue', None)
+		queue = Gst.ElementFactory.make('queue', 'x264queue')
 
 		enc.set_property('threads', 4)
 		enc.set_property('speed-preset', 'faster')

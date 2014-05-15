@@ -49,11 +49,11 @@ class Pipe(Gst.Bin):
 
 	def finalize(self):
 		if not self.aenc:
-			self.set_audio_encoder(Gst.ElementFactory.make('queue', None))
+			self.set_audio_encoder(Gst.ElementFactory.make('queue', 'paoqueue'))
 		self.aenc.link(self.muxer)
 
 		if not self.venc:
-			self.set_video_encoder(Gst.ElementFactory.make('queue', None))
+			self.set_video_encoder(Gst.ElementFactory.make('queue', 'pvoqueue'))
 		self.venc.link(self.muxer)
 
 def flv_make():

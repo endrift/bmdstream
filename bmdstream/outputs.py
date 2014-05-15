@@ -13,7 +13,7 @@ def make_output(config, output):
 class AudioDisplay(Gst.Bin):
 	def __init__(self):
 		super(AudioDisplay, self).__init__()
-		queue = Gst.ElementFactory.make('queue', None)
+		queue = Gst.ElementFactory.make('queue', 'daqueue')
 		sink = Gst.ElementFactory.make('autoaudiosink', None)
 
 		sink.set_property('sync', False)

@@ -62,7 +62,9 @@ def flv_make():
 	return flvmux
 
 def mkv_make():
-	return Gst.ElementFactory.make('matroskamux', None)
+	mkvmux = Gst.ElementFactory.make('matroskamux', None)
+	mkvmux.set_property('streamable', True)
+	return mkvmux
 
 container_registry['flv'] = flv_make
 container_registry['mkv'] = mkv_make

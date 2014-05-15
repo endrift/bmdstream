@@ -28,7 +28,7 @@ containers:
   raw:
     format: mkv
     audio: flac
-    video: raw
+    video: huffyuv
   mkv:
     format: mkv
     audio: aac

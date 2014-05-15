@@ -71,7 +71,27 @@ class X264Encoder(Gst.Bin):
 		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
 		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
 
+class HuffYUVEncoder(Gst.Bin):
+	def __init__(self):
+		super(HuffYUVEncoder, self).__init__()
+		convert = Gst.ElementFactory.make('videoconvert', None)
+		enc = Gst.ElementFactory.make('avenc_huffyuv', None)
+		queue = Gst.ElementFactory.make('queue', 'huffqueue')
+
+		self.add(convert)
+		self.add(enc)
+		self.add(queue)
+
+		convert.link(enc)
+		enc.link(queue)
+
+		self.set_property = enc.set_property
+
+		self.add_pad(Gst.GhostPad.new('sink', convert.get_static_pad('sink')))
+		self.add_pad(Gst.GhostPad.new('src', queue.get_static_pad('src')))
+
 encoder_registry['raw'] = None
 encoder_registry['flac'] = FlacEncoder
 encoder_registry['mp3'] = LameEncoder
 encoder_registry['h264'] = X264Encoder
+encoder_registry['huffyuv'] = HuffYUVEncoder

@@ -16,10 +16,11 @@ if __name__ == '__main__':
 		pass
 
 	pipeline = DeckLinkPipeline.create_from_configuration(config, config['pipeline']['input'])
-	pipeline.attach_audio_input(AudioInput())
 
-	for pipe in config['pipeline']['pipes']:
-		pipeline.attach_pipe(pipe['name'], make_pipe(config, pipe['format']))
+	pipes = config['pipeline'].get('pipes')
+	if pipes:
+		for pipe in pipes:
+			pipeline.attach_pipe(pipe['name'], make_pipe(config, pipe['format']))
 
 	for output in config['pipeline']['outputs']:
 		pipeline.attach_output(output.get('pipe'), make_output(config, output))

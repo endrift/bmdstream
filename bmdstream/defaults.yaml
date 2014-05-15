@@ -59,10 +59,3 @@ formats:
     samplerate: 22050
   raw:
     container: raw
-
-# Output destinations
-outputs:
-   file:
-     type: file
-   display:
-     type: display
